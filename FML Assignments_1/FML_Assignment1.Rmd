@@ -1,0 +1,42 @@
+---
+title: "Sample"
+output:
+  pdf_document: default
+  html_document: default
+date: "2023-09-04"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+# Source file is from kaggle(https://www.kaggle.com/datasets/jsphyg/tipping)
+```{r}
+Test<-read.csv("tips.csv")
+head(Test)
+```
+```{r}
+summary(Test$tip)
+
+```
+```{r}
+table(Test$sex)
+```
+
+```{r}
+library(dplyr)
+Test_filter <- filter(Test,tip>1.00)
+print(Test_filter)
+```
+```{r}
+Test_Square <- Test$tip^2
+print(Test_Square)
+```
+```{r}
+hist(Test$tip, main="Plot of One quantitative variable", xlab="X-axis", ylab="Y-axis", col="Blue")
+```
+```{r}
+plot(Test$size, Test$total_bill, main="Scatterplot of shipping time v/s shipping cost", xlab="X-axis", ylab="Y-axis", pch=5, col="Blue")
+```
+
+
+
