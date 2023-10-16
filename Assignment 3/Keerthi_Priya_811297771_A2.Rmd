@@ -1,0 +1,170 @@
+---
+title: "BA ASSIGNMENT 2"
+author: "Keerthi Priya Nallamekala"
+date: "2023-10-15"
+output:
+  word_document: default
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+#Question 1-Show the breakdown of the number of transactions by countries i.e., how many transactions are in the dataset for each country (consider all records including cancelled transactions). Show this in total number and also in percentage. Show only countries accounting for more than 1% of the total transactions.
+```{r}
+online_retail <- read.csv("Online_Retail.csv")
+transaction_counts <- table(online_retail$Country)
+Total_Transactions <- sum(transaction_counts)
+percentages <- (transaction_counts / Total_Transactions) * 100
+countries_over_1_percent <- names(percentages[percentages > 1])
+filtered_counts <- transaction_counts[countries_over_1_percent]
+print(filtered_counts)
+print(percentages[countries_over_1_percent])
+```
+
+#Question 2-Create a new variable ‘TransactionValue’ that is the product of the exising ‘Quantity’ and ‘UnitPrice’ variables. Add this variable to the dataframe.
+ 
+```{r}
+library(dplyr)
+online_retail <- online_retail %>% mutate(TransactionValue=Quantity*UnitPrice)
+head(online_retail)
+```
+
+#Question 3-Using the newly created variable, TransactionValue, show the breakdown of transaction values by countries i.e. how much money in total has been spent each country. Show this in total sum of transaction values. Show only countries with total transaction exceeding 130,000 British Pound.
+
+```{r}
+transactionvalues_by_country <- tapply(online_retail$TransactionValue, online_retail$Country, sum)
+filtered_countries <- transactionvalues_by_country[transactionvalues_by_country > 130000]
+print(filtered_countries)
+```
+#Question 4
+
+```{r}
+Online_Retail <- read.csv("Online_Retail.csv")
+Temp <- strptime(Online_Retail$InvoiceDate, format = '%m/%d/%Y %H:%M', tz = 'GMT')
+Online_Retail$New_Invoice_Date <- as.Date(Temp)
+Online_Retail$Invoice_Day_Week <- weekdays(Online_Retail$New_Invoice_Date)
+Online_Retail$New_Invoice_Hour <- as.numeric(format(Temp, "%H"))
+Online_Retail$New_Invoice_Month <- as.numeric(format(Temp, "%m"))
+```
+
+#Question 4(a)-Show the percentage of transactions (by numbers) by days of the week
+
+```{r}
+day_counts <- table(Online_Retail$Invoice_Day_Week)
+day_percentage <- (day_counts / sum(day_counts)) * 100
+print(day_percentage)
+```
+#Question 4(b)-Show the percentage of transactions (by transaction volume) by days of the week
+
+```{r}
+day_volume <- tapply(Online_Retail$Quantity, Online_Retail$Invoice_Day_Week, sum)
+day_volume_percentage <- (day_volume / sum(day_volume)) * 100
+print(day_volume_percentage)
+```
+#Question 4(c)-Show the percentage of transactions (by transaction volume) by month of the year
+
+```{r}
+month_volume <- tapply(Online_Retail$Quantity, Online_Retail$New_Invoice_Month, sum)
+month_volume_percentage <- (month_volume / sum(month_volume)) * 100
+print(month_volume_percentage)
+```
+#Question 4(d)-Date with the highest number of transactions from Australia
+
+```{r}
+max_transactions_date <- subset(Online_Retail, Country == "Australia")$
+New_Invoice_Date[which.max(table(subset(Online_Retail, Country == "Australia")$New_Invoice_Date))]
+print(max_transactions_date)
+```
+#Question 4(e)-Find the hour of the day to minimize customer impact during maintenance
+
+```{r}
+hourly_counts <- table(Online_Retail$New_Invoice_Hour)
+hours_available <- 7:20
+customer_impact <- sapply(hours_available, function(hour) sum(hourly_counts[hour:(hour + 1)]))
+optimal_hour <- hours_available[which.min(customer_impact)]
+print(optimal_hour)
+```
+#Question 5-Plot the histogram of transaction values from Germany. Use the hist() function to plot.
+
+```{r}
+germany_transactions <- online_retail[online_retail$Country == "Germany", ]
+hist(germany_transactions$TransactionValue,
+main = "Histogram of Transaction Values from Germany",
+xlab = "Transaction Values",
+ylab = "Frequency",
+col = "yellow",
+border = "red")
+
+```
+
+#Question 6-Which customer had the highest number of transactions? Which customer is most valuable (i.e. highest total sum of transactions)?
+
+```{r}
+transactions_per_customer <- table(online_retail$CustomerID)
+customer_with_most_transactions <- names(transactions_per_customer[transactions_per_customer ==
+max(transactions_per_customer)])
+total_transaction_values <- tapply(online_retail$TransactionValue, online_retail$CustomerID, sum)
+most_valuable_customer <- names(total_transaction_values[total_transaction_values ==
+max(total_transaction_values)])
+print(paste("Customer with the highest number of transactions:", customer_with_most_transactions))
+print(paste("Most valuable customer (highest total sum of transactions):", most_valuable_customer))
+```
+
+#Question 7-Calculate the percentage of missing values for each variable in the dataset
+
+```{r}
+missing_percentage <- colMeans(is.na(online_retail)) * 100
+print("Percentage of missing values for each variable:")
+print(missing_percentage)
+```
+
+#Question 8-What are the number of transactions with missing CustomerID records by countries?
+
+```{r}
+missing_customer_transactions <- online_retail[is.na(online_retail$CustomerID), ]
+missing_customer_transactions_by_country <- table(missing_customer_transactions$Country)
+print("Number of transactions with missing CustomerID records by countries:")
+print(missing_customer_transactions_by_country)
+```
+
+#Question 9-On average, how often the costumers comeback to the website for their next shopping? (i.e. what is the average number of days between consecutive shopping)
+
+```{r}
+online_retail$InvoiceDate <- as.POSIXlt(online_retail$InvoiceDate, format="%m/%d/%Y %H:%M", tz="GMT")
+sorted_data <- online_retail[order(online_retail$CustomerID, online_retail$InvoiceDate), ]
+time_diff <- unlist(tapply(sorted_data$InvoiceDate, sorted_data$CustomerID, function(x) c(0, diff(x))))
+time_diff <- time_diff[time_diff != 0]
+average_days_between_shopping <- mean(time_diff, na.rm = TRUE)
+print(paste("Average number of days between consecutive shopping sessions:",
+round(average_days_between_shopping, 2)))
+```
+#Question 10-n the retail sector, it is very important to understand the return rate of the goods purchased by customers. In this example, we can define this quantity, simply, as the ratio of the number of transactions cancelled (regardless of the transaction value) over the total number of transactions. With this definition, what is the return rate for the French customers?
+
+```{r}
+total_transactions <- nrow(online_retail)
+cancelled_transactions_france <- online_retail[online_retail$Country ==
+"France" & grepl("ˆC", online_retail$InvoiceNo), ]
+cancelled_transactions_count <- nrow(cancelled_transactions_france)
+return_rate_france <- cancelled_transactions_count / total_transactions * 100
+print(paste("Return rate for French customers:", round(return_rate_france, 2), "%"))
+```
+
+#Question 11-What is the product that has generated the highest revenue for the retailer? (i.e. item with the highest total sum of ‘TransactionValue’).
+
+```{r}
+Total_Transaction_values <- tapply(online_retail$TransactionValue, online_retail$Description, sum)
+highest_revenue_product <- names(Total_Transaction_values[Total_Transaction_values ==
+max(Total_Transaction_values)])
+print(paste("Product with the highest revenue:", highest_revenue_product))
+```
+#Question 12-How many unique customers are represented in the dataset? You can use unique() and length() functions.
+
+```{r}
+Unique_Customers <- unique(online_retail$CustomerID)
+number_of_unique_customers <- length(Unique_Customers)
+print(paste("Number of unique customers:", number_of_unique_customers))
+```
+ 
