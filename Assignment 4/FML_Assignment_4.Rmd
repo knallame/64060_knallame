@@ -1,0 +1,109 @@
+---
+title: "Assignment 4_FML"
+author: "Keerthi Priya Nallamekala"
+date: "2023-11-12"
+output:
+  word_document: default
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(factoextra)
+library(flexclust)
+library(tidyverse)
+library(readr)
+library(ggplot2)
+library(cluster)
+```
+
+```{r}
+Pharmaceuticals_KP <- read.csv("C:/Users/DELL/Documents/FML/Assignment/Assignment 4/Pharmaceuticals.csv")
+summary(Pharmaceuticals_KP)
+```
+#Question 1-Use only the numerical variables (1 to 9) to cluster the 21 firms. Justify the various choices made in conducting the cluster analysis, such as weights for different variables, the specific clustering algorithm(s) used, the number of clusters formed, and so on.
+
+```{r}
+KP <- na.omit(Pharmaceuticals_KP)
+KP
+row.names <- KP[,1]
+Pharmaceuticals1 <-  KP[,3:11]
+head(Pharmaceuticals1)
+Pharmaceuticals2 <- scale(Pharmaceuticals1)
+head(Pharmaceuticals2)
+fviz_nbclust(Pharmaceuticals2, kmeans, method = "wss") +
+  labs(subtitle = "Elbow Method")
+fviz_nbclust(Pharmaceuticals2, kmeans, method = "silhouette") + labs(subtitle = "Silhouette Method")
+fviz_nbclust(Pharmaceuticals2, kmeans, method = "gap_stat") + labs(subtitle = "Gap Stat Method")
+```
+```{r}
+set.seed(64060)
+KP <- kmeans(Pharmaceuticals2, centers = 5, nstart = 25)
+KP $centers
+fviz_cluster(KP, data = Pharmaceuticals2)
+KP
+Distance <- dist(Pharmaceuticals2, method = "euclidian")
+fviz_dist(Distance)
+Fitting <- kmeans(Pharmaceuticals2,5)
+aggregate(Pharmaceuticals2,by = list(Fitting$cluster), FUN = mean)
+Pharmaceuticals3 <- data.frame(Pharmaceuticals2,Fitting$cluster)
+Pharmaceuticals3
+clusplot(Pharmaceuticals2,Fitting$cluster, color = TRUE, shade = TRUE, 
+         labels = 2,
+         lines = 0)
+```
+
+
+#Question 2-Interpret the clusters with respect to the numerical variables used in forming the clusters.
+```{r}
+aggregate(Pharmaceuticals2, by = list(Fitting$cluster), FUN = mean)
+Pharmacy1 <- data.frame(Pharmaceuticals2,KP$cluster)
+Pharmacy1
+
+#Cluster 1:- JNJ, MRK, GSK, PFE
+#Cluster 1: Highest Market_Cap and lowest Beta/PE Ratio
+#Cluster 2:- AHM, WPI, AVE
+#Cluster 2: Highest Revenue Growth and lowest PE/Asset Turnover Ratio
+#Cluster 3:- CHTT, IVX, MRX, ELN
+#Cluster 3: Highest Beta/leverage/Asset Turnover Ratio and lowest 
+#Net_Profit_Margin, PE ratio and Market#Cluster
+#Cluster 4:- AGN,BAY, PHA
+#Cluster 4: Highest PE ratio and lowest Leverage/Asset_Turnover
+#Cluster 5:- ABT, WYE, AZN, SGP, BMY, NVS, LLY
+#Cluster 5: Highest Net_Profit_Margin and lowest Leverage
+```
+
+#Question 3-Is there a pattern in the clusters with respect to the numerical variables (10 to 12)? (those not used in forming the clusters.
+
+```{r}
+S1 <- Pharmaceuticals_KP[12:14] %>% mutate(Clusters=KP$cluster)
+ggplot(S1, mapping = aes(factor(Clusters), fill =Median_Recommendation))+geom_bar(position='dodge')+labs(x ='Clusters',y ='Frequence')
+ggplot(S1, mapping = aes(factor(Clusters),fill = Location))+
+  geom_bar(position = 'dodge')+labs(x ='Clusters',y = 'Frequence')
+ggplot(S1, mapping = aes(factor(Clusters),fill = Exchange))+geom_bar(position = 'dodge')+
+  labs(x ='Clusters',y = 'Frequence')
+#The graphs show that there is a slim pattern in the clusters.
+
+#While the cluster 1 has different Hold and Moderate Buy median, a different count from the US and Germany, and a different country count, the firms are evenly distributed among AMEX,NASDAQ, and NYSE.
+
+#The cluster 2 is equally distributed throughout the US and Canada, has equal Hold and Moderate Buy medians, and is exclusively listed on the NYSE.
+
+#A stock in Cluster 3 is listed on the NYSE and has equal Moderate Buy and Sell medians along with unique counts for France, Ireland, and the US.
+
+#The Moderate Buy, Strong Buy, and Hold medians in Cluster 4 are arranged from highest to lowest. They came from the US, the UK, and Switzerland and are listed on the NYSE.
+
+#The same hold and moderate buy medians apply to Cluster 5, which is listed on the NYSE and distributed across the US and the UK.
+```
+
+
+#Question 4-Provide an appropriate name for each cluster using any or all of the variables in the dataset.
+
+#Cluster 1 :- Buy Cluster
+#Cluster 2 :- Sceptical Cluster
+#Cluster 3 :- Moderate Buy Cluster
+#Cluster 4 :- Hold Cluster
+#Cluster 5 :- High Hold Cluster
